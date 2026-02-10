@@ -106,9 +106,4 @@ for epoch in range(100000):
                 best.eval()
                 best.export_to_binary(ouptut_train_file)
 
-                #onnx_program = torch.onnx.export(best, example_inputs, './text_classifier_model_'+language+'.onnx')
-                #if onnx_program is not None:
-                #    onnx_program.save("text_classifier_model_'+language+'.onnx")
-
-    #if epoch % 100 == 0:
-    #    print(f"Epoch {epoch},\t Loss: {best_loss:.8f}")
+    print(f"Epoch {epoch},\t Loss: {best_loss:.8f}")
