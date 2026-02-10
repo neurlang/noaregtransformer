@@ -15,65 +15,20 @@ def mask_we_dont_care(x, eps=1e-6):
     mask = mask_ones | mask_zeros
     return mask
 
-
-#def string_to_bits(s: str, add_batch_dim: bool = False) -> torch.Tensor:
-#    matrix = [[(ord(c) >> i) & 1 for i in range(8)] for c in s]  # LSB → MSB
-#    t = torch.tensor(matrix, dtype=torch.float32)
-#    return t.unsqueeze(0) if add_batch_dim else t
-
 def int_to_bits(integers, add_batch_dim: bool = False) -> torch.Tensor:
     matrix = [[(c >> i) & 1 for i in range(32)] for c in integers]  # LSB → MSB
     t = torch.tensor(matrix, dtype=torch.float32)
     return t.unsqueeze(0) if add_batch_dim else t
-
-#def bits_to_char(bits: torch.Tensor) -> str:
-#    bits = bits.flatten()
-#    val = int((bits * torch.tensor([1, 2, 4, 8, 16, 32, 64, 128], dtype=torch.float32)).sum())
-#    return chr(val)
 
 def bits_to_int(bits: torch.Tensor) -> int:
     bits = bits.flatten().to(torch.int64)
     weights = (1 << torch.arange(bits.numel(), dtype=torch.int64))
     return int((bits * weights).sum().item())
 
-
-#def pad(str, length):
-#    while len(str) < length:
-#        str += " "
-#    return str
-
 def pad_ints(ints, length):
     while len(ints) < length:
         ints += [0]
     return ints
-
-#def load_tsv_pairs(path, seq_len=10, limit=10):
-#    # --- Training data ---
-#    in_strings, out_strings = [], []
-#    import csv
-#    pairs = []
-#    with open(path, newline='', encoding='utf-8') as f:
-#        reader = csv.reader(f, delimiter='\t')
-#        for row in reader:
-#            if len(row) < 2:
-#                continue  # skip bad lines
-#            src = row[0].strip()
-#            tgt = row[1].strip()
-#
-#            if len(src) > seq_len or len(tgt) > seq_len:
-#                continue
-#
-#            src = pad(src, seq_len)
-#            tgt = pad(tgt, seq_len)
-#
-#            in_strings += [src]
-#            out_strings += [tgt]
-#
-#            limit-=1
-#            if limit <= 0:
-#                return in_strings, out_strings
-#
-#        return in_strings, out_strings
 
 
 def hashtronhash(n: int, s: int, max_val: int) -> int:
