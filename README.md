@@ -21,7 +21,7 @@ This project implements a custom transformer architecture that predicts entire o
 - **Activation:** ReLU for intermediate layers, Sigmoid for output
 - **Training:** Binary cross-entropy loss with masked positions
 
-The model converts input tokens to bit vectors (32 bits per token), processes them through attention layers with positional encoding, and outputs probability distributions for each position.
+The model converts input tokens to bit vectors (32 bits per token), processes them through attention layers with positional encoding, and outputs the proposed token for each position directly.
 
 ## Project Structure
 
