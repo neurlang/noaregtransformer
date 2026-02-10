@@ -22,7 +22,6 @@ func LoadTransformerFile(transformer *NoaregTransformer, tensors []TensorInfo) e
 	inputProjBias := bytesToFloat32Slice(tensorMap["input_proj.bias"].Data, endian)
 	inputProjWeight := bytesToFloat32Slice(tensorMap["val_0"].Data, endian)
 
-
 	// 2. Prepare attention layer parameters
 	attnInProjWeights := make([][][]float32, 4)
 	attnOutProjWeights := make([][][]float32, 4)
@@ -53,14 +52,14 @@ func LoadTransformerFile(transformer *NoaregTransformer, tensors []TensorInfo) e
 	attnInProjBiases[3] = bytesToFloat32Slice(tensorMap["attn_layers.3.in_proj_bias"].Data, endian)
 	attnOutProjBiases[3] = bytesToFloat32Slice(tensorMap["attn_layers.3.out_proj.bias"].Data, endian)
 
-/*
-	fmt.Println("inputProjWeight", inputProjWeight[0], inputProjWeight[1], )
-	fmt.Println("inputProjBias", inputProjBias[0], inputProjBias[1], )
-	fmt.Println("attnInProjWeights", attnInProjWeights[0][0][1], attnInProjWeights[0][1][0], )
-	fmt.Println("attnOutProjWeights", attnOutProjWeights[0][0][1], attnOutProjWeights[0][1][0], )
-	fmt.Println("attnInProjBiases", attnInProjBiases[0][0], attnInProjBiases[0][1], )
-	fmt.Println("attnOutProjBiases", attnOutProjBiases[0][0], attnOutProjBiases[0][1], )
-*/
+	/*
+		fmt.Println("inputProjWeight", inputProjWeight[0], inputProjWeight[1], )
+		fmt.Println("inputProjBias", inputProjBias[0], inputProjBias[1], )
+		fmt.Println("attnInProjWeights", attnInProjWeights[0][0][1], attnInProjWeights[0][1][0], )
+		fmt.Println("attnOutProjWeights", attnOutProjWeights[0][0][1], attnOutProjWeights[0][1][0], )
+		fmt.Println("attnInProjBiases", attnInProjBiases[0][0], attnInProjBiases[0][1], )
+		fmt.Println("attnOutProjBiases", attnOutProjBiases[0][0], attnOutProjBiases[0][1], )
+	*/
 
 	// Initialize transformer parameters
 	err := transformer.InitializeParameters(

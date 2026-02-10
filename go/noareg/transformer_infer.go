@@ -55,11 +55,11 @@ func TransformerInferFull(transformer *NoaregTransformer, detokenizer map[uint32
 
 		//fmt.Println(output_data)
 		for j := range output_data {
-			if pseudo_data[i:i+limit][j] == 0 {
+			if pseudo_data[i : i+limit][j] == 0 {
 				move = limit
 				break
 			}
-			var part = GetDetokenizerChoice(detokenizer, pseudo_data[i:i+limit][j], output_data[j])
+			var part = GetDetokenizerChoice(detokenizer, pseudo_data[i : i+limit][j], output_data[j])
 			if strings.HasPrefix(part, "_") {
 				if j == 0 {
 					move = j + 1
@@ -70,7 +70,7 @@ func TransformerInferFull(transformer *NoaregTransformer, detokenizer map[uint32
 			}
 			out += part
 			if strings.HasSuffix(part, "_") {
-				move = j+1
+				move = j + 1
 				break
 			}
 		}

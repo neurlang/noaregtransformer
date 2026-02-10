@@ -449,4 +449,3 @@ func (t *NoaregTransformer) Forward(x [][]float32) ([][]float32, error) {
 
 	return current, nil
 }
-
