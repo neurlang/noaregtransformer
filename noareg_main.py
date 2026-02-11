@@ -1,16 +1,60 @@
 from noareg_traindata import load_tsv_individual, int_to_bits, bits_to_int, hash_string, clean_default_choices, mask_we_dont_care
 from noareg_transformer import NoaregTransformer
+import os
+import argparse
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
-import os
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Process TSV and generate weights file.")
+
+    parser.add_argument(
+        "--input-tsv-file",
+        type=str,
+        default="~/goruut/dicts/japanese/clean.tsv",
+        help="Path to input TSV file"
+    )
+
+    parser.add_argument(
+        "--output-train-file",
+        type=str,
+        default="~/goruut/dicts/japanese/weights8.bin",
+        help="Path to output weights file"
+    )
+
+    parser.add_argument(
+        "--seq-len",
+        type=int,
+        default=16,
+        help="Sequence length"
+    )
+
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=999999999999,
+        help="Limit number of rows"
+    )
+
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=41,
+        help="Random seed"
+    )
+
+    return parser.parse_args()
+
+
+args = parse_args()
 
 # parameters
-input_tsv_file = os.path.expanduser('~/goruut/dicts/japanese/clean.tsv')
-ouptut_train_file = os.path.expanduser('~/goruut/dicts/japanese/weights8.bin')
-seq_len = 16
-limit = 999999999999
-seed = 41
+input_tsv_file = os.path.expanduser(args.input_tsv_file)
+output_train_file = os.path.expanduser(args.output_train_file)
+seq_len = args.seq_len
+limit = args.limit
+seed = args.seed
 
 # --- Check for GPU availability ---
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -104,6 +148,6 @@ for epoch in range(100000):
                 # Create example inputs for exporting the model. The inputs should be a tuple of tensors.
                 example_inputs = (torch.randn(1, seq_len, 32),)
                 best.eval()
-                best.export_to_binary(ouptut_train_file)
+                best.export_to_binary(output_train_file)
 
     print(f"Epoch {epoch},\t Loss: {best_loss:.8f}")
