@@ -1,5 +1,6 @@
 from noareg_traindata import load_tsv_individual, int_to_bits, bits_to_int, hash_string, clean_default_choices, mask_we_dont_care
 from noareg_transformer import NoaregTransformer
+import time
 import os
 import argparse
 import torch
@@ -44,6 +45,13 @@ def parse_args():
         help="Random seed"
     )
 
+    parser.add_argument(
+        "--patience",
+        type=int,
+        default=600,
+        help="Patience in seconds"
+    )
+
     return parser.parse_args()
 
 
@@ -55,6 +63,7 @@ output_train_file = os.path.expanduser(args.output_train_file)
 seq_len = args.seq_len
 limit = args.limit
 seed = args.seed
+patience = args.patience
 
 # --- Check for GPU availability ---
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -92,11 +101,17 @@ dataset = TensorDataset(train_inputs, train_targets)
 loader = DataLoader(dataset, batch_size=10000, shuffle=True)
 
 step = 0
+epoch_time = int(time.time())
 
 for epoch in range(100000):
     #step = epoch
     #batch_inputs = train_inputs
     #batch_targets = train_targets
+
+    patience_time = int(time.time())
+    print("clock", patience_time - epoch_time)
+    if patience_time - epoch_time > patience:
+        break
 
     for batch_inputs, batch_targets in loader:
 
@@ -144,6 +159,7 @@ for epoch in range(100000):
                 print(success, "%", mistake_in, mistake_out)
 
             if success > best_success:
+                epoch_time = int(time.time())
                 best_success = success
                 # Create example inputs for exporting the model. The inputs should be a tuple of tensors.
                 example_inputs = (torch.randn(1, seq_len, 32),)
