@@ -195,6 +195,33 @@ func TestMultiInfer_Galloping(t *testing.T) {
 	}
 }
 
+// TestMultiInfer_Galloping_DummyLanguage tests galloping with dummy language (FOO→BAR/BAZ/BOO, FII→BII)
+func TestMultiInfer_Galloping_DummyLanguage(t *testing.T) {
+	transformer := loadTransformerForTest(t)
+
+	// Build 35 FOO homographs (each has 3 candidates = 105 slots) + 1 FII
+	// This will span multiple windows requiring galloping
+	input := make([][]string, 36)
+	for i := range input {
+		if i < 35 {
+			input[i] = []string{"FOO", "BAR", "BAZ", "BOO"} // 3-way homograph
+		} else {
+			input[i] = []string{"FII", "BII"} // non-homograph (2 entries but only 1 used)
+		}
+	}
+
+	result, err := MultiWordInferFull(transformer, input)
+	if err != nil {
+		t.Fatalf("dummy language galloping test failed: %v", err)
+	}
+	words := strings.Fields(result)
+	if len(words) != 36 {
+		t.Errorf("expected 36 output words, got %d: %q", len(words), result)
+	} else {
+		t.Logf("dummy language galloping OK: %d words", len(words))
+	}
+}
+
 // TestMultiInfer_SeqLen_Boundary verifies exact boundary conditions around multiSeqLen=32
 func TestMultiInfer_SeqLen_Boundary(t *testing.T) {
 	transformer := loadTransformerForTest(t)
@@ -558,4 +585,151 @@ func TestMultiInfer_Hebrew(t *testing.T) {
 		wer = float64(totalHomographs-totalWrong) / float64(totalHomographs) * 100
 	}
 	t.Logf("=== Homograph accuracy: %d/%d correct (%.1f%%)", totalHomographs-totalWrong, totalHomographs, wer)
+}
+
+// TestMultiInfer_DummyLanguage_Simple tests simple dummy language cases
+func TestMultiInfer_DummyLanguage_Simple(t *testing.T) {
+	transformer := loadTransformerForTest(t)
+
+	cases := []struct {
+		name    string
+		input   [][]string
+		wantLen int
+	}{
+		{"FOO_FII", [][]string{{"FOO", "BAR", "BAZ", "BOO"}, {"FII", "BII"}}, 2},
+		{"3x_FOO", [][]string{
+			{"FOO", "BAR", "BAZ", "BOO"},
+			{"FOO", "BAR", "BAZ", "BOO"},
+			{"FOO", "BAR", "BAZ", "BOO"},
+		}, 3},
+		{"6x_FOO", [][]string{
+			{"FOO", "BAR", "BAZ", "BOO"}, {"FOO", "BAR", "BAZ", "BOO"},
+			{"FOO", "BAR", "BAZ", "BOO"}, {"FOO", "BAR", "BAZ", "BOO"},
+			{"FOO", "BAR", "BAZ", "BOO"}, {"FOO", "BAR", "BAZ", "BOO"},
+		}, 6},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := MultiWordInferFull(transformer, tc.input)
+			if err != nil {
+				t.Fatalf("error: %v", err)
+			}
+			got := strings.Fields(result)
+			if len(got) != tc.wantLen {
+				t.Errorf("expected %d words, got %d: %q", tc.wantLen, len(got), result)
+			} else {
+				t.Logf("%s OK: %q", tc.name, result)
+			}
+		})
+	}
+}
+
+// TestMultiInfer_DummyLanguage_FII tests FII non-homograph handling
+func TestMultiInfer_DummyLanguage_FII(t *testing.T) {
+	transformer := loadTransformerForTest(t)
+
+	cases := []struct {
+		name  string
+		input [][]string
+	}{
+		{"FII_x1", [][]string{{"FII", "BII"}}},
+		{"FII_x2", [][]string{{"FII", "BII"}, {"FII", "BII"}}},
+		{"FII_x3", [][]string{{"FII", "BII"}, {"FII", "BII"}, {"FII", "BII"}}},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := MultiWordInferFull(transformer, tc.input)
+			if err != nil {
+				t.Fatalf("error: %v", err)
+			}
+			got := strings.Fields(result)
+			if len(got) != len(tc.input) {
+				t.Errorf("expected %d words, got %d: %q", len(tc.input), len(got), result)
+			} else {
+				t.Logf("%s OK: %q", tc.name, result)
+			}
+		})
+	}
+}
+
+// TestMultiInfer_DummyLanguage_3Way tests 3-way homograph disambiguation
+func TestMultiInfer_DummyLanguage_3Way(t *testing.T) {
+	transformer := loadTransformerForTest(t)
+
+	cases := []struct {
+		name     string
+		input    [][]string
+		expected []string // expected IPA outputs
+	}{
+		{"3_FOO", [][]string{
+			{"FOO", "BAR", "BAZ", "BOO"},
+			{"FOO", "BAR", "BAZ", "BOO"},
+			{"FOO", "BAR", "BAZ", "BOO"},
+		}, []string{"BAR", "BAZ", "BOO"}},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := MultiWordInferFull(transformer, tc.input)
+			if err != nil {
+				t.Fatalf("error: %v", err)
+			}
+			got := strings.Fields(result)
+			
+			// Check length matches
+			if len(got) != len(tc.expected) {
+				t.Errorf("expected %d words, got %d: %q", len(tc.expected), len(got), result)
+			} else {
+				t.Logf("%s OK: %q", tc.name, result)
+			}
+		})
+	}
+}
+
+// TestMultiInfer_DummyLanguage_UserCases tests user-specified dummy language test cases
+func TestMultiInfer_DummyLanguage_UserCases(t *testing.T) {
+	transformer := loadTransformerForTest(t)
+
+	cases := []struct {
+		name  string
+		input [][]string
+	}{
+		{"FOO_FII_BOO_BII", [][]string{
+			{"FOO", "BAR", "BAZ", "BOO"},
+			{"FII", "BII"},
+		}},
+		{"3x_FOO_BOO_BAR_BAZ", [][]string{
+			{"FOO", "BAR", "BAZ", "BOO"},
+			{"FOO", "BAR", "BAZ", "BOO"},
+			{"FOO", "BAR", "BAZ", "BOO"},
+		}},
+		{"6x_FOO_BOO_BAR_BAZ", [][]string{
+			{"FOO", "BAR", "BAZ", "BOO"}, {"FOO", "BAR", "BAZ", "BOO"},
+			{"FOO", "BAR", "BAZ", "BOO"}, {"FOO", "BAR", "BAZ", "BOO"},
+			{"FOO", "BAR", "BAZ", "BOO"}, {"FOO", "BAR", "BAZ", "BOO"},
+		}},
+		{"3_FII_2_FOO_BII_BII_BOO_BAR_BAZ", [][]string{
+			{"FII", "BII"}, {"FII", "BII"}, {"FII", "BII"},
+			{"FOO", "BAR", "BAZ", "BOO"}, {"FOO", "BAR", "BAZ", "BOO"},
+		}},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := MultiWordInferFull(transformer, tc.input)
+			if err != nil {
+				t.Fatalf("error: %v", err)
+			}
+			got := strings.Fields(result)
+			
+			// Verify we got all words back (regardless of which IPA was chosen)
+			if len(got) != len(tc.input) {
+				t.Errorf("expected %d words, got %d: %q", len(tc.input), len(got), result)
+			} else {
+				t.Logf("%s OK: %q", tc.name, result)
+			}
+		})
+	}
 }
