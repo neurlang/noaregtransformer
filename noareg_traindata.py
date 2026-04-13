@@ -15,11 +15,11 @@ def mask_we_dont_care(x, eps=1e-6):
     mask = mask_ones | mask_zeros
     return mask
 
-def int_to_bits_tensor(int_tensor: torch.Tensor, num_bits: int = 32):
+def int_to_bits_tensor(int_tensor: torch.Tensor, num_bits: torch.uint8 = 32):  
     # int_tensor: (N,) or (batch, N)
     device = int_tensor.device
-    shifts = torch.arange(num_bits, device=device)
-    return ((int_tensor.unsqueeze(-1) >> shifts) & 1).float()
+    shifts = torch.arange(num_bits, device=device, dtype=torch.uint8)
+    return ((int_tensor.to(int).unsqueeze(-1) >> shifts.to(int)) & 1).to(torch.uint8)
 
 def bits_to_int(bits: torch.Tensor) -> int:
     bits = bits.flatten().to(torch.int64)

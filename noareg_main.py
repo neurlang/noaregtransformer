@@ -119,6 +119,8 @@ for epoch in range(100000):
         break
 
     for batch_inputs, batch_targets in loader:
+        batch_inputs = batch_inputs.float()
+        batch_targets = batch_targets.float()
 
 
         optimizer.zero_grad()

@@ -131,6 +131,8 @@ def main():
             break
 
         for batch_x, batch_y in loader:
+            batch_x = batch_x.float()
+            batch_y = batch_y.float()
             optimizer.zero_grad()
 
             # Only train on non-padding slots (input != 0)
