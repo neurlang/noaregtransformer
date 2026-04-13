@@ -195,6 +195,166 @@ func TestMultiInfer_Galloping(t *testing.T) {
 	}
 }
 
+// TestMultiInfer_SeqLen_Boundary verifies exact boundary conditions around multiSeqLen=32
+func TestMultiInfer_SeqLen_Boundary(t *testing.T) {
+	transformer := loadTransformerForTest(t)
+
+	// Build homograph that expands to exactly 1 slot per word
+	homograph := []string{"שב", "ʃˈev", "ʃˈav"}
+
+	cases := []struct {
+		name   string
+		count  int // number of words
+		expect int // expected output count
+	}{
+		{"31_slots", 31, 31},
+		{"32_slots", 32, 32},
+		{"33_slots", 33, 33}, // requires galloping (32 + 1)
+		{"64_slots", 64, 64}, // exact multiple of 32
+		{"65_slots", 65, 65}, // requires galloping with wraparound
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			input := make([][]string, tc.count)
+			for i := range input {
+				input[i] = homograph
+			}
+
+			result, err := MultiWordInferFull(transformer, input)
+			if err != nil {
+				t.Fatalf("seq_len boundary test failed: %v", err)
+			}
+			words := strings.Fields(result)
+			if len(words) != tc.expect {
+				t.Errorf("expected %d output words, got %d: %q", tc.expect, len(words), result)
+			} else {
+				t.Logf("%s OK: %d words", tc.name, len(words))
+			}
+		})
+	}
+}
+
+// TestMultiInfer_IPA_Dedup_EdgeCases tests more complex dedup scenarios
+func TestMultiInfer_IPA_Dedup_EdgeCases(t *testing.T) {
+	transformer := loadTransformerForTest(t)
+
+	// Test 1: Multiple duplicates of same IPA
+	dup1 := [][]string{
+		{"שב", "ʃˈev", "ʃˈav", "ʃˈev", "ʃˈev"}, // 3x ʃˈev
+	}
+	dup2 := [][]string{
+		{"שב", "ʃˈev", "ʃˈav"}, // 1x ʃˈev
+	}
+
+	r1, err := MultiWordInferFull(transformer, dup1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r2, err := MultiWordInferFull(transformer, dup2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r1 != r2 {
+		t.Errorf("dedup edge case 1: with-dup=%q without-dup=%q", r1, r2)
+	}
+
+	// Test 2: All candidates are duplicates
+	allDup := [][]string{
+		{"שב", "ʃˈev", "ʃˈav", "ʃˈev", "ʃˈav"},
+	}
+	singleDup := [][]string{
+		{"שב", "ʃˈev", "ʃˈav"},
+	}
+
+	r3, err := MultiWordInferFull(transformer, allDup)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r4, err := MultiWordInferFull(transformer, singleDup)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r3 != r4 {
+		t.Errorf("dedup edge case 2: all-dup=%q single-dup=%q", r3, r4)
+	}
+}
+
+// TestMultiInfer_IPA_OrderEdgeCases tests more complex order scenarios
+func TestMultiInfer_IPA_OrderEdgeCases(t *testing.T) {
+	transformer := loadTransformerForTest(t)
+
+	// Test: Reverse order vs original with 3+ candidates
+	original := [][]string{
+		{"שב", "ʃˈev", "ʃˈav", "ʃˈu"},
+	}
+	reversed := [][]string{
+		{"שב", "ʃˈu", "ʃˈav", "ʃˈev"},
+	}
+
+	r1, err := MultiWordInferFull(transformer, original)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r2, err := MultiWordInferFull(transformer, reversed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r1 != r2 {
+		t.Errorf("order edge case: original=%q reversed=%q", r1, r2)
+	}
+
+	// Test: Random shuffled order
+	shuffled := [][]string{
+		{"שב", "ʃˈav", "ʃˈu", "ʃˈev"},
+	}
+
+	r3, err := MultiWordInferFull(transformer, shuffled)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r1 != r3 {
+		t.Errorf("order edge case: original=%q shuffled=%q", r1, r3)
+	}
+}
+
+// TestMultiInfer_Galloping_Full verifies galloping with many windows
+func TestMultiInfer_Galloping_Full(t *testing.T) {
+	transformer := loadTransformerForTest(t)
+
+	cases := []struct {
+		name  string
+		count int // slots > multiSeqLen (32)
+	}{
+		{"40_slots", 40},
+		{"50_slots", 50},
+		{"64_slots", 64},   // exactly 2 windows
+		{"96_slots", 96},   // exactly 3 windows
+		{"100_slots", 100}, // requires 4 windows (32+32+32+4)
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			homograph := []string{"שב", "ʃˈev", "ʃˈav"}
+			input := make([][]string, tc.count)
+			for i := range input {
+				input[i] = homograph
+			}
+
+			result, err := MultiWordInferFull(transformer, input)
+			if err != nil {
+				t.Fatalf("galloping full test failed: %v", err)
+			}
+			words := strings.Fields(result)
+			if len(words) != tc.count {
+				t.Errorf("expected %d output words, got %d", tc.count, len(words))
+			} else {
+				t.Logf("%s OK: processed all %d slots across galloping windows", tc.name, len(words))
+			}
+		})
+	}
+}
+
 // TestMultiInfer_Hebrew runs the 10 Hebrew sentences and reports homograph WER.
 func TestMultiInfer_Hebrew(t *testing.T) {
 	transformer := loadTransformerForTest(t)
