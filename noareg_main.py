@@ -1,4 +1,4 @@
-from noareg_traindata import load_tsv_individual, int_to_bits, bits_to_int, hash_string, clean_default_choices, mask_we_dont_care
+from noareg_traindata import load_tsv_individual, int_to_bits_tensor, bits_to_int, hash_string, clean_default_choices, mask_we_dont_care
 from noareg_transformer import NoaregTransformer
 import time
 import os
@@ -86,8 +86,13 @@ in_ints, out_ints = clean_default_choices(in_ints, out_ints, possible)
 print("Training Dataset of Size:", len(in_ints))
 #print(possible, random_in, random_out)
 
-train_inputs = torch.stack([int_to_bits(s) for s in in_ints]).to(device)
-train_targets = torch.stack([int_to_bits(s) for s in out_ints]).to(device)
+train_inputs = int_to_bits_tensor(
+    torch.tensor(inputs_ints, dtype=torch.int32, device=device)
+)
+
+train_targets = int_to_bits_tensor(
+    torch.tensor(outputs_ints, dtype=torch.int32, device=device)
+)
 
 #print(train_inputs.size())
 #print(train_targets.size())
