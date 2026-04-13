@@ -102,11 +102,11 @@ def main():
         return
 
     train_inputs = int_to_bits_tensor(
-        torch.tensor(inputs_ints, dtype=torch.int32, device=device)
+        torch.tensor(inputs_ints, dtype=torch.uint32, device=device)
     )
 
     train_targets = int_to_bits_tensor(
-        torch.tensor(outputs_ints, dtype=torch.int32, device=device)
+        torch.tensor(outputs_ints, dtype=torch.uint32, device=device)
     )
     print(f"Input tensor:  {train_inputs.shape}")
     print(f"Target tensor: {train_targets.shape}")

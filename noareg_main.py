@@ -87,11 +87,11 @@ print("Training Dataset of Size:", len(in_ints))
 #print(possible, random_in, random_out)
 
 train_inputs = int_to_bits_tensor(
-    torch.tensor(inputs_ints, dtype=torch.int32, device=device)
+    torch.tensor(inputs_ints, dtype=torch.uint32, device=device)
 )
 
 train_targets = int_to_bits_tensor(
-    torch.tensor(outputs_ints, dtype=torch.int32, device=device)
+    torch.tensor(outputs_ints, dtype=torch.uint32, device=device)
 )
 
 #print(train_inputs.size())
