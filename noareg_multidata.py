@@ -1,12 +1,7 @@
 import csv
 import tqdm
-from noareg_traindata import hashtronhash, int_to_bits, bits_to_int
+from noareg_traindata import hashtronhash, bits_to_int, pad_ints
 
-
-def pad_ints(ints, length):
-    while len(ints) < length:
-        ints += [0xAAAAAAAA]
-    return ints
 
 def hash_string_small(string: str) -> int:
     h = 0xFFFF
@@ -74,33 +69,30 @@ def load_multi(path: str, lexicon: dict, seq_len: int = 32):
                     expanded_wayness.append(1)
                 elif len(candidates) > 1:
                     have_homograph = True
-
-                    candidates = sorted(set(candidates), key=hash_string_small)
-
-                    for cand in candidates:
+                    # Sort candidates by hash for determinism (matches Go behavior)
+                    sorted_candidates = sorted(candidates, key=hash_string_small)
+                    for cand in sorted_candidates:
                         expanded_words.append(w)
                         expanded_ipa.append(cand)
                         expanded_label.append(0xFFFFFFFF if cand == correct_ipa else 0)
-                        expanded_wayness.append(len(candidates))
+                        expanded_wayness.append(len(sorted_candidates))
 
             if not have_homograph:
                 continue
 
             # Build combined with galloping-aware padding
-            # Each window is seq_len slots. If a homograph won't fit, pad and move to next window
-            # The key insight: when we pad at position X, the slot that didn't fit goes into next window
-            
             combined = []
             labels = []
-            
+
             i = 0
             while i < len(expanded_words):
                 pos_in_window = len(combined) % seq_len
-                                
-                # If this word's wayness exceeds remaining space in current window
-                if expanded_wayness[i] > (seq_len - pos_in_window):
+                remaining_in_window = seq_len - pos_in_window
+                wayness = expanded_wayness[i]
+
+                if wayness > remaining_in_window:
                     # Pad to complete current window with zeros for boundary-spanning homographs
-                    padding_needed = seq_len - pos_in_window
+                    padding_needed = remaining_in_window
                     combined.extend([0] * padding_needed)
                     labels.extend([0xAAAAAAAA] * padding_needed)
                     # Don't increment i - same word will be processed in next window iteration
@@ -111,15 +103,23 @@ def load_multi(path: str, lexicon: dict, seq_len: int = 32):
                     labels.append(expanded_label[i])
                     i += 1
 
-            end = seq_len
-            while end < len(combined) + seq_len:              
-                chunk_combined = pad_ints(combined[end-seq_len:end], seq_len)[:seq_len]
-                chunk_labels = pad_ints(labels[end-seq_len:end], seq_len)[:seq_len]
+            # Pad final to make length divisible by seq_len with zeros
+            while len(combined) % seq_len != 0:
+                combined.append(0)
+                labels.append(0xAAAAAAAA)
+
+            # Chunk into windows of seq_len
+            start = 0
+            while start < len(combined):
+                end = start + seq_len
+
+                chunk_combined = pad_ints(combined[start:end], seq_len)[:seq_len]
+                chunk_labels = pad_ints(labels[start:end], seq_len)[:seq_len]
 
                 inputs_all.append(chunk_combined)
                 outputs_all.append(chunk_labels)
 
-                end += seq_len
+                start += seq_len
 
     return inputs_all, outputs_all
 

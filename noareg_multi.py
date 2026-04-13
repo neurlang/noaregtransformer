@@ -19,7 +19,7 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 
 from noareg_multidata import load_lexicon, load_multi
-from noareg_traindata import int_to_bits, bits_to_int
+from noareg_traindata import int_to_bits_tensor, bits_to_int
 from noareg_transformer import NoaregTransformer
 
 
@@ -101,8 +101,13 @@ def main():
         print("No training data found — check your tsv files.")
         return
 
-    train_inputs  = torch.stack([int_to_bits(s) for s in inputs_ints]).to(device)
-    train_targets = torch.stack([int_to_bits(s) for s in outputs_ints]).to(device)
+    train_inputs = int_to_bits_tensor(
+        torch.tensor(inputs_ints, dtype=torch.int32, device=device)
+    )
+
+    train_targets = int_to_bits_tensor(
+        torch.tensor(outputs_ints, dtype=torch.int32, device=device)
+    )
     print(f"Input tensor:  {train_inputs.shape}")
     print(f"Target tensor: {train_targets.shape}")
 
