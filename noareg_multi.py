@@ -152,7 +152,9 @@ def main():
             if loss_val < best_loss:
                 best_loss  = loss_val
                 best_model = model.copy().to('cpu')
-                acc = evaluate(best_model, train_inputs.cpu(), train_targets.cpu(), 'cpu')
+                acc = evaluate(best_model,
+                                train_inputs[:len(train_inputs)//1000].float().cpu(),
+                                train_targets[:len(train_targets)//1000].float().cpu(), 'cpu')
                 print(f"Step {step:4d} | loss {best_loss:.6f} | acc {acc*100:.1f}%")
 
                 if acc > best_acc:
