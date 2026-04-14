@@ -78,12 +78,12 @@ criterion = nn.BCELoss().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
 
-in_ints, out_ints, possible, random_in, random_out = load_tsv_individual(
+inputs_ints, outputs_ints, possible, random_in, random_out = load_tsv_individual(
     input_tsv_file, seq_len=seq_len, limit=limit)
 
-in_ints, out_ints = clean_default_choices(in_ints, out_ints, possible)
+inputs_ints, outputs_ints = clean_default_choices(inputs_ints, outputs_ints, possible)
 
-print("Training Dataset of Size:", len(in_ints))
+print("Training Dataset of Size:", len(inputs_ints))
 #print(possible, random_in, random_out)
 
 train_inputs = int_to_bits_tensor(
