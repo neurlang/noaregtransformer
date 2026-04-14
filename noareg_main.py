@@ -86,11 +86,11 @@ inputs_ints, outputs_ints = clean_default_choices(inputs_ints, outputs_ints, pos
 print("Training Dataset of Size:", len(inputs_ints))
 #print(possible, random_in, random_out)
 
-train_inputs = int_to_bits_tensor(
+train_inputs = (
     torch.tensor(inputs_ints, dtype=torch.uint32, device=device)
 )
 
-train_targets = int_to_bits_tensor(
+train_targets = (
     torch.tensor(outputs_ints, dtype=torch.uint32, device=device)
 )
 
@@ -119,8 +119,8 @@ for epoch in range(100000):
         break
 
     for batch_inputs, batch_targets in loader:
-        batch_inputs = batch_inputs.float()
-        batch_targets = batch_targets.float()
+        batch_inputs = int_to_bits_tensor(batch_inputs).float()
+        batch_targets = int_to_bits_tensor(batch_targets).float()
 
 
         optimizer.zero_grad()

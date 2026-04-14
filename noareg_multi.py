@@ -101,11 +101,11 @@ def main():
         print("No training data found — check your tsv files.")
         return
 
-    train_inputs = int_to_bits_tensor(
+    train_inputs = (
         torch.tensor(inputs_ints, dtype=torch.uint32, device=device)
     )
 
-    train_targets = int_to_bits_tensor(
+    train_targets = (
         torch.tensor(outputs_ints, dtype=torch.uint32, device=device)
     )
     print(f"Input tensor:  {train_inputs.shape}")
@@ -131,8 +131,8 @@ def main():
             break
 
         for batch_x, batch_y in loader:
-            batch_x = batch_x.float()
-            batch_y = batch_y.float()
+            batch_x = int_to_bits_tensor(batch_x).float()
+            batch_y = int_to_bits_tensor(batch_y).float()
             optimizer.zero_grad()
 
             # Only train on non-padding slots (input != 0)
@@ -153,8 +153,8 @@ def main():
                 best_loss  = loss_val
                 best_model = model.copy().to('cpu')
                 acc = evaluate(best_model,
-                                train_inputs[:len(train_inputs)//1000].float().cpu(),
-                                train_targets[:len(train_targets)//1000].float().cpu(), 'cpu')
+                                int_to_bits_tensor(train_inputs[:len(train_inputs)//1000]).float().cpu(),
+                                int_to_bits_tensor(train_targets[:len(train_targets)//1000]).float().cpu(), 'cpu')
                 print(f"Step {step:4d} | loss {best_loss:.6f} | acc {acc*100:.1f}%")
 
                 if acc > best_acc:
