@@ -15,6 +15,11 @@ def mask_we_dont_care(x, eps=1e-6):
     mask = mask_ones | mask_zeros
     return mask
 
+def int_to_bits(integers, add_batch_dim: bool = False) -> torch.Tensor:
+    matrix = [[(c >> i) & 1 for i in range(32)] for c in integers]  # LSB → MSB
+    t = torch.tensor(matrix, dtype=torch.float32)
+    return t.unsqueeze(0) if add_batch_dim else t
+
 def int_to_bits_tensor(int_tensor: torch.Tensor, num_bits: torch.uint8 = 32):  
     # int_tensor: (N,) or (batch, N)
     device = int_tensor.device

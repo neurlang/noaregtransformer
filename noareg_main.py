@@ -1,4 +1,4 @@
-from noareg_traindata import load_tsv_individual, int_to_bits_tensor, bits_to_int, hash_string, clean_default_choices, mask_we_dont_care
+from noareg_traindata import load_tsv_individual, int_to_bits_tensor, int_to_bits, bits_to_int, hash_string, clean_default_choices, mask_we_dont_care
 from noareg_transformer import NoaregTransformer
 import time
 import os
@@ -82,6 +82,9 @@ inputs_ints, outputs_ints, possible, random_in, random_out = load_tsv_individual
     input_tsv_file, seq_len=seq_len, limit=limit)
 
 inputs_ints, outputs_ints = clean_default_choices(inputs_ints, outputs_ints, possible)
+
+if len(inputs_ints) == 0:
+    exit;
 
 print("Training Dataset of Size:", len(inputs_ints))
 #print(possible, random_in, random_out)
