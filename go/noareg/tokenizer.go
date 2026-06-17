@@ -10,6 +10,11 @@ func tokenizePossibilities(str string) (out []uint32) {
 }
 
 func Tokenize(detokenizer map[uint32]map[[2]uint32]string, str string, pad int) (out []uint32, punct [2]string) {
+	out, _, punct = Tokenize2(detokenizer, str, pad)
+	return out, punct
+}
+
+func Tokenize2(detokenizer map[uint32]map[[2]uint32]string, str string, pad int) (out []uint32, chunks []string, punct [2]string) {
 	var half = len(str) / 2
 main:
 	for len(str) > 0 {
@@ -17,6 +22,7 @@ main:
 		for i := range row {
 			if _, ok := detokenizer[row[len(row)-i-1]]; ok {
 				out = append(out, row[len(row)-i-1])
+				chunks = append(chunks, str[:len(str)-i])
 				str = str[len(str)-i:]
 				continue main
 			}
@@ -31,5 +37,5 @@ main:
 	for i := 0; i < pad; i++ {
 		out = append(out, 0)
 	}
-	return out, punct
+	return out, chunks, punct
 }

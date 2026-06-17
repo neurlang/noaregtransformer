@@ -77,3 +77,47 @@ func TransformerInferFull(transformer *NoaregTransformer, detokenizer map[uint32
 	}
 	return out, garbage, nil
 }
+
+
+func TransformerInferFull2(transformer *NoaregTransformer, detokenizer map[uint32]map[[2]uint32]string, try_word string) (out [][2]string, garbage [2]string, err error) {
+
+	const limit = 16
+
+	pseudo_data, chunks, garbage := Tokenize2(detokenizer, try_word, limit)
+	var move = limit
+	for i := 0; i+limit < len(pseudo_data); i += move {
+
+		//fmt.Println(pseudo_data[i:i+limit])
+		output_data, err := TransformerInfer(transformer, pseudo_data[i:i+limit])
+		if err != nil {
+			return nil, [2]string{}, err
+		}
+
+		//fmt.Println(output_data)
+		for j := range output_data {
+			if pseudo_data[i : i+limit][j] == 0 {
+				move = limit
+				break
+			}
+			var part = GetDetokenizerChoice(detokenizer, pseudo_data[i : i+limit][j], output_data[j])
+			if strings.HasPrefix(part, "_") {
+				if j == 0 {
+					move = j + 1
+				} else {
+					move = j
+				}
+				break
+			}
+			if len(chunks) == 0 {
+				chunks = []string{""}
+			}
+			out = append(out, [2]string{chunks[0], part})
+			chunks = chunks[1:]
+			if strings.HasSuffix(part, "_") {
+				move = j + 1
+				break
+			}
+		}
+	}
+	return out, garbage, nil
+}
